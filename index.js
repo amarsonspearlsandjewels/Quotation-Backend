@@ -12,9 +12,8 @@ app.get('/', (req, res) => {
   res.send('Amarsons Pearls and Jewels');
 });
 
-// AUTHENTICATE
-app.get(
-  '/authenticate/username=:username/password=:password',
+// AUTHENTICATE -- NO CHANGES REQUIRED [DONE]
+app.get('/authenticate/username=:username/password=:password',
   async (req, res) => {
     const { username, password } = req.params;
 
@@ -56,9 +55,8 @@ app.get(
   }
 );
 
-// ADD USER
-app.get(
-  '/addUser/username=:username/password=:password/admin=:admin',
+// ADD USER - -- NO CHANGES REQUIRED [DONE]
+app.get('/addUser/username=:username/password=:password/admin=:admin',
   async (req, res) => {
     const { username, password, admin } = req.params;
 
@@ -102,8 +100,8 @@ app.get(
   }
 );
 
-app.get(
-  '/addEditedUser/username=:username/password=:password/admin=:admin',
+// ADD EDITED USER - -- NO CHANGES REQUIRED [DONE]
+app.get('/addEditedUser/username=:username/password=:password/admin=:admin',
   async (req, res) => {
     const { username, password, admin } = req.params;
 
@@ -112,13 +110,6 @@ app.get(
     try {
       const userRef = db.collection('USERS').doc(username);
       const userDoc = await userRef.get();
-
-      // if (userDoc.exists) {
-      //   return res.status(409).json({
-      //     success: false,
-      //     message: `User '${username}' already exists`,
-      //   });
-      // }
 
       await userRef.set({
         USERNAME: username,
@@ -140,9 +131,8 @@ app.get(
   }
 );
 
-// EDIT ADMIN ACCESS
-app.get(
-  '/editAdminAccess/username=:username/admin=:admin',
+// EDIT ADMIN ACCESS - -- NO CHANGES REQUIRED [DONE]
+app.get('/editAdminAccess/username=:username/admin=:admin',
   async (req, res) => {
     const { username, admin } = req.params;
 
@@ -182,7 +172,7 @@ app.get(
   }
 );
 
-// DELETE USER
+// DELETE USER - -- NO CHANGES REQUIRED [DONE]
 app.get('/deleteUser/username=:username', async (req, res) => {
   const { username } = req.params;
 
@@ -219,7 +209,7 @@ app.get('/deleteUser/username=:username', async (req, res) => {
   }
 });
 
-// GET ALL USERS
+// GET ALL USERS - -- NO CHANGES REQUIRED [DONE]
 app.get('/getAllUsers', async (req, res) => {
   try {
     const snapshot = await db.collection('USERS').get();
@@ -243,6 +233,35 @@ app.get('/getAllUsers', async (req, res) => {
   }
 });
 
+
+// GET GOLD RATES - -- NO CHANGES REQUIRED [DONE]
+app.get('/getGoldRates', async (req, res) => {
+  try {
+    const pricesDoc = await db.collection('PRICES').doc('prices').get();
+
+    if (!pricesDoc.exists) {
+      return res.status(404).json({ error: 'Prices document not found' });
+    }
+
+    const data = pricesDoc.data();
+    const result = {};
+
+    // Only include 14k, 18k, 22k if present
+    ['14k', '18k', '22k'].forEach((key) => {
+      if (data[key] !== undefined) {
+        result[key] = Number(data[key]);
+      }
+    });
+
+    res.status(200).json(result);
+  } catch (error) {
+    console.error('Error fetching gold rates:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+
+// GET ALL PRICES FOR THE UPDATES SECTION -- NO CHANGES REQUIRED [DONE].
 app.get('/getAllPrices', async (req, res) => {
   try {
     const snapshot = await db.collection('PRICES').get();
@@ -266,31 +285,7 @@ app.get('/getAllPrices', async (req, res) => {
   }
 });
 
-app.get('/getGoldRates', async (req, res) => {
-  try {
-    const goldDoc = await db.collection('PRICES').doc('GOLD').get();
-
-    if (!goldDoc.exists) {
-      return res.status(404).json({ error: 'Gold document not found' });
-    }
-
-    const data = goldDoc.data();
-    const result = {};
-
-    // Include only purity keys (like "14k", "18k", etc.)
-    for (const key in data) {
-      if (Array.isArray(data[key]) && key !== 'MAKING' && key !== 'WASTAGE') {
-        result[key] = Number(data[key][0]); // Get the first price, convert to number
-      }
-    }
-
-    res.status(200).json(result);
-  } catch (error) {
-    console.error('Error fetching gold rates:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
+// UPDATE PRICES - -- NO CHANGES REQUIRED [DONE]
 app.post('/updatePrices', async (req, res) => {
   try {
     const updatedPrices = req.body.PRICES;
@@ -326,6 +321,83 @@ app.post('/updatePrices', async (req, res) => {
     });
   }
 });
+
+// DELETE ITEM - -- NO CHANGES REQUIRED [DONE]
+app.get('/deleteItem/productId=:productId', async (req, res) => {
+  try {
+    const { productId } = req.params;
+
+    if (!productId || typeof productId !== 'string') {
+      return res.status(400).json({
+        success: false,
+        message: 'Valid productId is required',
+      });
+    }
+
+    const itemRef = db.collection('ITEMS').doc(productId);
+    const doc = await itemRef.get();
+
+    if (!doc.exists) {
+      return res.status(404).json({
+        success: false,
+        message: `Item with productId ${productId} does not exist`,
+      });
+    }
+
+    await itemRef.delete();
+
+    return res.status(200).json({
+      success: true,
+      message: `Item ${productId} successfully deleted`,
+    });
+  } catch (error) {
+    console.error('Error in /deleteItem:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error.message,
+    });
+  }
+});
+
+// DELETE DRAFT - -- NO CHANGES REQUIRED [DONE]
+app.get('/deleteDraft/productId=:productId', async (req, res) => {
+  try {
+    const { productId } = req.params;
+
+    if (!productId || typeof productId !== 'string') {
+      return res.status(400).json({
+        success: false,
+        message: 'Valid productId is required',
+      });
+    }
+
+    const itemRef = db.collection('DRAFT').doc(productId);
+    const doc = await itemRef.get();
+
+    if (!doc.exists) {
+      return res.status(404).json({
+        success: false,
+        message: `Item with productId ${productId} does not exist`,
+      });
+    }
+
+    await itemRef.delete();
+
+    return res.status(200).json({
+      success: true,
+      message: `Item ${productId} successfully deleted`,
+    });
+  } catch (error) {
+    console.error('Error in /deleteDraft:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error.message,
+    });
+  }
+});
+
 
 app.post('/addItem', async (req, res) => {
   try {
@@ -1063,78 +1135,7 @@ app.get('/getAllDrafts', async (req, res) => {
   }
 });
 
-app.get('/deleteItem/productId=:productId', async (req, res) => {
-  try {
-    const { productId } = req.params;
 
-    if (!productId || typeof productId !== 'string') {
-      return res.status(400).json({
-        success: false,
-        message: 'Valid productId is required',
-      });
-    }
-
-    const itemRef = db.collection('ITEMS').doc(productId);
-    const doc = await itemRef.get();
-
-    if (!doc.exists) {
-      return res.status(404).json({
-        success: false,
-        message: `Item with productId ${productId} does not exist`,
-      });
-    }
-
-    await itemRef.delete();
-
-    return res.status(200).json({
-      success: true,
-      message: `Item ${productId} successfully deleted`,
-    });
-  } catch (error) {
-    console.error('Error in /deleteItem:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Internal server error',
-      error: error.message,
-    });
-  }
-});
-app.get('/deleteDraft/productId=:productId', async (req, res) => {
-  try {
-    const { productId } = req.params;
-
-    if (!productId || typeof productId !== 'string') {
-      return res.status(400).json({
-        success: false,
-        message: 'Valid productId is required',
-      });
-    }
-
-    const itemRef = db.collection('DRAFT').doc(productId);
-    const doc = await itemRef.get();
-
-    if (!doc.exists) {
-      return res.status(404).json({
-        success: false,
-        message: `Item with productId ${productId} does not exist`,
-      });
-    }
-
-    await itemRef.delete();
-
-    return res.status(200).json({
-      success: true,
-      message: `Item ${productId} successfully deleted`,
-    });
-  } catch (error) {
-    console.error('Error in /deleteDraft:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Internal server error',
-      error: error.message,
-    });
-  }
-});
 
 app.listen(3000, () => {
   console.log('Server is running on port 3000');
