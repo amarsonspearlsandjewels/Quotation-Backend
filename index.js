@@ -1140,6 +1140,70 @@ app.get('/getAllDrafts', async (req, res) => {
 });
 
 
+app.get('/getItemsUsed', async (req, res) => {
+  try {
+    const snapshot = await db.collection('FIXEDITEMS').get();
+
+    const items = snapshot.docs.map((doc) => doc.data());
+
+    return res.status(200).json({
+      success: true,
+      message: `${items.length} items retrieved from FIXEDITEMS`,
+      items: items,
+    });
+  } catch (error) {
+    console.error('Error fetching items from FIXEDITEMS:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error while fetching items',
+      error: error.message,
+    });
+  }
+});
+
+app.post('/addItemsUsed', async (req, res) => {
+  try {
+    const { items } = req.body;
+
+    if (!Array.isArray(items)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Request body must contain an "items" array',
+      });
+    }
+
+    // Clear the existing collection
+    const existingDocs = await db.collection('FIXEDITEMS').get();
+    const batch = db.batch();
+    
+    existingDocs.docs.forEach((doc) => {
+      batch.delete(doc.ref);
+    });
+
+    // Add new items to the collection
+    items.forEach((item, index) => {
+      const docRef = db.collection('FIXEDITEMS').doc(`item_${index}`);
+      batch.set(docRef, item);
+    });
+
+    await batch.commit();
+
+    return res.status(200).json({
+      success: true,
+      message: `Successfully updated FIXEDITEMS collection with ${items.length} items`,
+      itemsCount: items.length,
+    });
+  } catch (error) {
+    console.error('Error updating FIXEDITEMS collection:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error while updating items',
+      error: error.message,
+    });
+  }
+});
+
+
 
 app.listen(3000, () => {
   console.log('Server is running on port 3000');
