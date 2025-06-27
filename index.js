@@ -565,7 +565,7 @@ app.post('/addDraft', async (req, res) => {
       message: `Item ${productId} added successfully`,
     });
   } catch (error) {
-    console.error('Error in /addDraft:', error);
+    console.error('Error in /addItem:', error);
     return res.status(500).json({
       success: false,
       message: 'Internal server error',
@@ -875,7 +875,10 @@ app.post('/addeditedDraft', async (req, res) => {
 //   }
 // });
 
+//
 
+
+// ADD ITEMS - -- NO CHANGES REQUIRED [DONE]
 app.get('/getAllItems', async (req, res) => {
   try {
     const [itemsSnapshot, pricesSnapshot] = await Promise.all([
@@ -919,7 +922,9 @@ app.get('/getAllItems', async (req, res) => {
         const price = parseFloat(mat.price || 0);
         const unit = (mat.unit || 'ct').toLowerCase();
 
-        const weightInGms = unit === 'gram' ? quantity : quantity * 0.2;
+        // If unit is gram/gms, use quantity directly as grams
+        // If unit is carat/ct, convert to grams (0.2g per carat)
+        const weightInGms = unit === 'gram' || unit === 'gms' ? quantity : quantity * 0.2;
         const matPrice = quantity * price;
 
         materialTotal += matPrice;
@@ -942,9 +947,13 @@ app.get('/getAllItems', async (req, res) => {
       let makingTypeUsed = making;
       if (category === 'POLKI') {
         const polki = netWeight * prices.making['Polki Making'];
-        const victorian = netWeight * prices.making['Victorian Making'];
-        makingCharge = making === 1 ? victorian : polki;
-      } else if (category === 'DIAMOND') {
+        // const victorian = netWeight * prices.making['Victorian Making'];
+        makingCharge = polki;
+      } 
+      else if (category === 'VICTORIAN') {
+        makingCharge = netWeight * prices.making['Victorian Making'];
+      }
+      else if (category === 'DIAMOND') {
         makingCharge = netWeight * prices.making['Diamond Making'];
       } else {
         makingCharge = netWeight * prices.making['Gold Making'];
@@ -999,9 +1008,7 @@ app.get('/getAllItems', async (req, res) => {
   }
 });
 
-
-
-
+// GET DRAFTS - -- NO CHANGES REQUIRED [DONE]
 app.get('/getAllDrafts', async (req, res) => {
   try {
     const [itemsSnapshot, pricesSnapshot] = await Promise.all([
@@ -1045,7 +1052,9 @@ app.get('/getAllDrafts', async (req, res) => {
         const price = parseFloat(mat.price || 0);
         const unit = (mat.unit || 'ct').toLowerCase();
 
-        const weightInGms = unit === 'gram' ? quantity : quantity * 0.2;
+        // If unit is gram/gms, use quantity directly as grams
+        // If unit is carat/ct, convert to grams (0.2g per carat)
+        const weightInGms = unit === 'gram' || unit === 'gms' ? quantity : quantity * 0.2;
         const matPrice = quantity * price;
 
         materialTotal += matPrice;
@@ -1068,9 +1077,12 @@ app.get('/getAllDrafts', async (req, res) => {
       let makingTypeUsed = making;
       if (category === 'POLKI') {
         const polki = netWeight * prices.making['Polki Making'];
-        const victorian = netWeight * prices.making['Victorian Making'];
-        makingCharge = making === 1 ? victorian : polki;
-      } else if (category === 'DIAMOND') {
+        
+        makingCharge =  polki;
+      } else if (category === 'VICTORIAN') {
+        makingCharge = netWeight * prices.making['Victorian Making'];
+      }
+      else if (category === 'DIAMOND') {
         makingCharge = netWeight * prices.making['Diamond Making'];
       } else {
         makingCharge = netWeight * prices.making['Gold Making'];
@@ -1125,7 +1137,7 @@ app.get('/getAllDrafts', async (req, res) => {
   }
 });
 
-
+// GET ITEMS USED - -- NO CHANGES REQUIRED [DONE]
 app.get('/getItemsUsed', async (req, res) => {
   try {
     const snapshot = await db.collection('FIXEDITEMS').get();
@@ -1147,6 +1159,7 @@ app.get('/getItemsUsed', async (req, res) => {
   }
 });
 
+// ADD ITEMS USED - -- NO CHANGES REQUIRED [DONE]
 app.post('/addItemsUsed', async (req, res) => {
   try {
     const { items } = req.body;
