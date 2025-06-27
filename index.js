@@ -685,49 +685,51 @@ app.get('/getAllItems', async (req, res) => {
 
       // --- MATCH FRONTEND LOGIC ---
       // 2. Net weight (after stone deduction, before wastage)
-      const netWeight = gross - totalStoneWeightGms;
-      // 3. Gold price
-      const goldPrice = parseFloat(prices.prices[goldpurity]);
-      const goldAmt = goldPrice * netWeight;
-      // 4. Wastage amount (as percent of gold amount)
+      const netWeightBeforeWastage = gross - totalStoneWeightGms;
+      // 3. Wastage (as percent of net weight)
       const wastagePercent = parseFloat(prices.wastage.wastage);
-      const wastageAmt = (wastagePercent / 100) * goldAmt;
-      // 5. Making charges - FIXED LOGIC
+      const wastage = (wastagePercent / 100) * netWeightBeforeWastage;
+      // 4. Final netWeight = metal part only
+      const netWeightFinal = netWeightBeforeWastage - wastage;
+      // 5. Gold price
+      const goldPrice = parseFloat(prices.prices[goldpurity]);
+      const goldAmt = goldPrice * netWeightFinal;
+      // 6. Making charges - FIXED LOGIC
       let makingCharge = 0;
       if (category === 'POLKI') {
-        makingCharge = netWeight * parseFloat(prices.making['Polki Making'] || 0);
+        makingCharge = netWeightFinal * parseFloat(prices.making['Polki Making'] || 0);
       } else if (category === 'VICTORIAN') {
-        makingCharge = netWeight * parseFloat(prices.making['Victorian Making'] || 0);
+        makingCharge = netWeightFinal * parseFloat(prices.making['Victorian Making'] || 0);
       } else if (category === 'DIAMOND') {
-        makingCharge = netWeight * parseFloat(prices.making['Diamond Making'] || 0);
+        makingCharge = netWeightFinal * parseFloat(prices.making['Diamond Making'] || 0);
       } else {
-        makingCharge = netWeight * parseFloat(prices.making['Gold Making'] || 0);
+        makingCharge = netWeightFinal * parseFloat(prices.making['Gold Making'] || 0);
       }
-      // 6. Subtotal and GST
-      const subtotal = goldAmt + wastageAmt + makingCharge + materialTotal;
+      // 7. Subtotal and GST
+      const subtotal = goldAmt + wastage * goldPrice + makingCharge + materialTotal;
       const calculatedPrice = parseFloat((subtotal * (1 + gstPercent / 100)).toFixed(1));
 
       if (calculatedPrice !== storedPrice) {
         updated = true;
         await db.collection('ITEMS').doc(item.id).update({
           finalPrice: calculatedPrice,
-          netweight: parseFloat(netWeight.toFixed(2)),
+          netweight: parseFloat(netWeightFinal.toFixed(2)),
         });
       }
 
-      // 7. Prepare response
+      // 8. Prepare response
       updatedItems.push({
         ...item,
         updated,
         finalPrice: calculatedPrice,
-        netweight: parseFloat(netWeight.toFixed(2)),
+        netweight: parseFloat(netWeightFinal.toFixed(2)),
         makingTypeUsed: making,
         totalStoneWeightCts: parseFloat(totalStoneWeightCts.toFixed(2)),
         totalStoneWeightGms: parseFloat(totalStoneWeightGms.toFixed(2)),
         totalStonePrice: parseFloat(materialTotal.toFixed(1)),
         pricingBreakdown: {
           goldCharges: parseFloat(goldAmt.toFixed(1)),
-          wastageCharges: parseFloat(wastageAmt.toFixed(1)),
+          wastageCharges: parseFloat((wastage * goldPrice).toFixed(1)),
           makingCharges: parseFloat(makingCharge.toFixed(1)),
           materialCharges: parseFloat(materialTotal.toFixed(1)),
           gstPercent,
@@ -810,49 +812,51 @@ app.get('/getAllDrafts', async (req, res) => {
 
       // --- MATCH FRONTEND LOGIC ---
       // 2. Net weight (after stone deduction, before wastage)
-      const netWeight = gross - totalStoneWeightGms;
-      // 3. Gold price
-      const goldPrice = parseFloat(prices.prices[goldpurity]);
-      const goldAmt = goldPrice * netWeight;
-      // 4. Wastage amount (as percent of gold amount)
+      const netWeightBeforeWastage = gross - totalStoneWeightGms;
+      // 3. Wastage (as percent of net weight)
       const wastagePercent = parseFloat(prices.wastage.wastage);
-      const wastageAmt = (wastagePercent / 100) * goldAmt;
-      // 5. Making charges - FIXED LOGIC
+      const wastage = (wastagePercent / 100) * netWeightBeforeWastage;
+      // 4. Final netWeight = metal part only
+      const netWeightFinal = netWeightBeforeWastage - wastage;
+      // 5. Gold price
+      const goldPrice = parseFloat(prices.prices[goldpurity]);
+      const goldAmt = goldPrice * netWeightFinal;
+      // 6. Making charges - FIXED LOGIC
       let makingCharge = 0;
       if (category === 'POLKI') {
-        makingCharge = netWeight * parseFloat(prices.making['Polki Making'] || 0);
+        makingCharge = netWeightFinal * parseFloat(prices.making['Polki Making'] || 0);
       } else if (category === 'VICTORIAN') {
-        makingCharge = netWeight * parseFloat(prices.making['Victorian Making'] || 0);
+        makingCharge = netWeightFinal * parseFloat(prices.making['Victorian Making'] || 0);
       } else if (category === 'DIAMOND') {
-        makingCharge = netWeight * parseFloat(prices.making['Diamond Making'] || 0);
+        makingCharge = netWeightFinal * parseFloat(prices.making['Diamond Making'] || 0);
       } else {
-        makingCharge = netWeight * parseFloat(prices.making['Gold Making'] || 0);
+        makingCharge = netWeightFinal * parseFloat(prices.making['Gold Making'] || 0);
       }
-      // 6. Subtotal and GST
-      const subtotal = goldAmt + wastageAmt + makingCharge + materialTotal;
+      // 7. Subtotal and GST
+      const subtotal = goldAmt + wastage * goldPrice + makingCharge + materialTotal;
       const calculatedPrice = parseFloat((subtotal * (1 + gstPercent / 100)).toFixed(1));
 
       if (calculatedPrice !== storedPrice) {
         updated = true;
         await db.collection('DRAFT').doc(item.id).update({
           finalPrice: calculatedPrice,
-          netweight: parseFloat(netWeight.toFixed(2)),
+          netweight: parseFloat(netWeightFinal.toFixed(2)),
         });
       }
 
-      // 7. Prepare response
+      // 8. Prepare response
       updatedItems.push({
         ...item,
         updated,
         finalPrice: calculatedPrice,
-        netweight: parseFloat(netWeight.toFixed(2)),
+        netweight: parseFloat(netWeightFinal.toFixed(2)),
         makingTypeUsed: making,
         totalStoneWeightCts: parseFloat(totalStoneWeightCts.toFixed(2)),
         totalStoneWeightGms: parseFloat(totalStoneWeightGms.toFixed(2)),
         totalStonePrice: parseFloat(materialTotal.toFixed(1)),
         pricingBreakdown: {
           goldCharges: parseFloat(goldAmt.toFixed(1)),
-          wastageCharges: parseFloat(wastageAmt.toFixed(1)),
+          wastageCharges: parseFloat((wastage * goldPrice).toFixed(1)),
           makingCharges: parseFloat(makingCharge.toFixed(1)),
           materialCharges: parseFloat(materialTotal.toFixed(1)),
           gstPercent,
