@@ -1172,6 +1172,16 @@ app.post('/addItemsUsed', async (req, res) => {
       });
     }
 
+    // Validate each item has a name and a valid unit
+    for (const item of items) {
+      if (!item.name || !item.unit || !['ct', 'gms'].includes(item.unit)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Each item must have a name and a unit (ct or gms)',
+        });
+      }
+    }
+
     // Clear the existing collection
     const existingDocs = await db.collection('FIXEDITEMS').get();
     const batch = db.batch();
