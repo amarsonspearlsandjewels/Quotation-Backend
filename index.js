@@ -948,7 +948,9 @@ app.get('/getAllItems', async (req, res) => {
       if (category === 'POLKI') {
         const polki = netWeight * prices.making['Polki Making'];
         const victorian = netWeight * prices.making['Victorian Making'];
-        makingCharge = making === 1 ? victorian : polki;
+        makingCharge = polki;
+      } else if (category === 'VICTORIAN') {
+        makingCharge = netWeight * prices.making['Victorian Making'];
       } else if (category === 'DIAMOND') {
         makingCharge = netWeight * prices.making['Diamond Making'];
       } else {
@@ -1074,7 +1076,9 @@ app.get('/getAllDrafts', async (req, res) => {
       if (category === 'POLKI') {
         const polki = netWeight * prices.making['Polki Making'];
         const victorian = netWeight * prices.making['Victorian Making'];
-        makingCharge = making === 1 ? victorian : polki;
+        makingCharge = polki;
+      } else if (category === 'VICTORIAN') {
+        makingCharge = netWeight * prices.making['Victorian Making'];
       } else if (category === 'DIAMOND') {
         makingCharge = netWeight * prices.making['Diamond Making'];
       } else {
